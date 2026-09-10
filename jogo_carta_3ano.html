@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Missão: Entregue a Carta!</title>
+<style>
+body{font-family:Arial,sans-serif;background:#eef6ff;margin:0;padding:20px;color:#1f2937}
+.game{max-width:720px;margin:auto}
+.card{background:white;border-radius:22px;padding:25px;box-shadow:0 4px 15px #0001}
+.center{text-align:center}
+.emoji{font-size:60px}.title{font-size:30px;font-weight:bold}
+.badge{display:inline-block;background:#dbeafe;padding:8px 12px;border-radius:20px;font-weight:bold}
+.score{float:right;font-weight:bold}
+.bar{height:10px;background:#ddd;border-radius:10px;margin:15px 0 20px;overflow:hidden}
+.bar div{height:100%;background:#2563eb;width:0}
+.question{font-size:21px;font-weight:bold;margin:20px 0}
+button{border:0;border-radius:13px;padding:13px 18px;font-size:17px;font-weight:bold;cursor:pointer}
+.start,.next,.again{background:#2563eb;color:white}
+.options{display:grid;gap:12px}
+.option{background:#f8fafc;border:2px solid #dbe3ee;text-align:left}
+.option.correct{background:#dcfce7;border-color:#22c55e}
+.option.wrong{background:#fee2e2;border-color:#ef4444}
+.feedback{padding:14px;margin-top:15px;border-radius:12px;background:#f1f5f9;font-weight:bold}
+.hidden{display:none}
+.extra{margin-top:20px;padding:18px;border:2px dashed #94a3b8;border-radius:15px;text-align:left;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="game">
+<div class="card">
+<div><span class="badge">📬 MISSÃO DA CARTA</span><span class="score">⭐ <span id="score">0</span> pontos</span></div>
+<div class="bar"><div id="bar"></div></div>
+<div id="area"></div>
+</div>
+</div>
+<script>
+const desafios=[
+["O carteiro encontrou uma carta. Quem vai RECEBER a carta?",["O remetente","O destinatário","O envelope"],1,"O destinatário é quem recebe a carta."],
+["Quem ESCREVE e ENVIA uma carta é chamado de...",["Remetente","Destinatário","Leitor"],0,"O remetente é quem escreve e envia a carta."],
+["Qual frase pode começar uma carta para um amigo?",["Um abraço, Pedro.","Querido Pedro,","Até a próxima!"],1,"“Querido Pedro,” é uma saudação."],
+["Qual frase pode terminar uma carta?",["Querida Ana,","Estou muito feliz!","Um grande abraço, João."],2,"A despedida aparece no final da carta."],
+["Qual item NÃO é uma parte obrigatória de uma carta pessoal?",["Saudação","Mensagem","Lista de compras"],2,"Lista de compras não é uma parte obrigatória da carta."],
+["Qual sequência organiza melhor uma carta?",["Saudação → mensagem → despedida → assinatura","Assinatura → despedida → saudação → mensagem","Mensagem → assinatura → saudação → despedida"],0,"Essa sequência apresenta as partes da carta em uma ordem adequada."],
+["DESAFIO FINAL! Qual trecho mostra uma DESPEDIDA?",["Querida Bia,","Quero contar uma novidade.","Beijos, Lara"],2,"“Beijos, Lara” é uma despedida acompanhada da assinatura."]
+];
+let atual=0,pontos=0,bloqueado=false;
+const area=document.getElementById("area"),score=document.getElementById("score"),bar=document.getElementById("bar");
+
+function inicio(){
+ atual=0;pontos=0;score.textContent=0;bar.style.width="0%";mostrar();
+}
+function mostrar(){
+ bloqueado=false;
+ const d=desafios[atual];
+ area.innerHTML=`<div><small>DESAFIO ${atual+1} DE ${desafios.length}</small>
+ <div class="question">${d[0]}</div>
+ <div class="options">${d[1].map((x,i)=>`<button class="option" data-i="${i}">${x}</button>`).join("")}</div>
+ <div id="feedback" class="feedback hidden"></div>
+ <button id="next" class="next hidden">Próximo desafio ➜</button></div>`;
+ document.querySelectorAll(".option").forEach(b=>b.addEventListener("click",()=>responder(+b.dataset.i,b)));
+ document.getElementById("next").addEventListener("click",proximo);
+}
+function responder(i,b){
+ if(bloqueado)return;
+ bloqueado=true;
+ const d=desafios[atual],op=document.querySelectorAll(".option");
+ op.forEach(x=>x.disabled=true);
+ const f=document.getElementById("feedback");
+ if(i===d[2]){pontos+=10;b.classList.add("correct");f.textContent="🎉 Muito bem! +10 pontos. "+d[3];}
+ else{b.classList.add("wrong");op[d[2]].classList.add("correct");f.textContent="💡 Vamos aprender: "+d[3];}
+ score.textContent=pontos;f.classList.remove("hidden");document.getElementById("next").classList.remove("hidden");
+}
+function proximo(){
+ atual++;
+ bar.style.width=(atual/desafios.length*100)+"%";
+ if(atual<desafios.length)mostrar();else finalizar();
+}
+function finalizar(){
+ bar.style.width="100%";
+ let msg=pontos===70?"🏆 PERFEITO! Você é um mestre das cartas!":pontos>=50?"🌟 MUITO BEM! Você já conhece bastante sobre cartas!":pontos>=30?"👏 BOM TRABALHO! Continue treinando!":"📚 Vamos estudar mais um pouquinho sobre cartas!";
+ area.innerHTML=`<div class="center"><div class="emoji">🏆</div><div class="title">Missão concluída!</div>
+ <p>${msg}</p><h2>⭐ ${pontos} pontos</h2>
+ <div class="extra"><b>✍️ DESAFIO DE ESCRITOR</b><br><br>
+ Imagine que você quer escrever uma carta para um amigo contando sobre um passeio divertido.<br><br>
+ Não se esqueça de colocar:<br>
+ 📅 Data<br>👋 Saudação<br>💬 Mensagem<br>🤗 Despedida<br>✍️ Assinatura</div>
+ <button class="again" id="again">🔄 Jogar novamente</button></div>`;
+ document.getElementById("again").addEventListener("click",inicio);
+}
+area.innerHTML=`<div class="center"><div class="emoji">📬</div>
+<div class="title">Missão: Entregue a Carta!</div>
+<p>O carteiro precisa da sua ajuda! Resolva os desafios e descubra se você conhece os segredos de uma boa carta.</p>
+<p>🎮 7 desafios &nbsp; ⭐ 10 pontos por acerto &nbsp; 💡 Feedback imediato</p>
+<button class="start" id="start">🚀 COMEÇAR A MISSÃO</button></div>`;
+document.getElementById("start").addEventListener("click",inicio);
+</script>
+</body>
+</html>
